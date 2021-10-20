@@ -9,6 +9,10 @@ import javax.swing.JTextField;
 import javax.swing.border.Border;
 
 import java.awt.*;
+import java.awt.event.*;
+import java.util.List;
+import java.util.Map;
+
 
 public class PrimerFinder extends JFrame {
 	private static final long serialVersionUID = -8723649827349837249L;
@@ -21,14 +25,14 @@ public class PrimerFinder extends JFrame {
 	private JLabel primerRangeLabel = new JLabel("<html><u><bold><b1>Primer Length Range (bp)</u></bold></b1></html>");
 	private JLabel resultsLabel = new JLabel("Below are the results of your search:");
 	private JTextArea enterSequence = new JTextArea();
-	private JTextField minTm = new JTextField();
-	private JTextField maxTm = new JTextField();
-	private JTextField minBp = new JTextField();
-	private JTextField maxBp = new JTextField();
-	private JTextField minGc = new JTextField();
-	private JTextField maxGc = new JTextField();
-	private JTextField minPrimerBp = new JTextField();
-	private JTextField maxPrimerBp = new JTextField();
+	private JTextField minTm = new JTextField("40");
+	private JTextField maxTm = new JTextField("60");
+	private JTextField minBp = new JTextField("50");
+	private JTextField maxBp = new JTextField("2000");
+	private JTextField minGc = new JTextField("50");
+	private JTextField maxGc = new JTextField("60");
+	private JTextField minPrimerBp = new JTextField("22");
+	private JTextField maxPrimerBp = new JTextField("28");
 	private JPanel mainFrame = new JPanel();
 	private JPanel resultFrame = new JPanel();
 	private JPanel inputFrame = new JPanel();
@@ -40,7 +44,8 @@ public class PrimerFinder extends JFrame {
 	private JPanel gcInputFrame = new JPanel();
 	private JPanel bpInputFrame = new JPanel();
 	private JPanel primerBpInputFrame = new JPanel();
-	
+	private JPanel currentError;
+	private List<Map<String , String>> primers;
 	
 	
 	public PrimerFinder(String title) {
@@ -54,6 +59,8 @@ public class PrimerFinder extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
 	
+
+	
 	public static void main(String[] args) {
 		new PrimerFinder("Primer Finder v0.01");
 	}
@@ -61,10 +68,76 @@ public class PrimerFinder extends JFrame {
 	public void buildMainFrame() {
 		mainFrame.setLayout(new GridLayout(2,0));
 		mainFrame.add(inputFrame);
-		mainFrame.add(resultFrame);
 		buildInputFrame();
-		buildResultsFrame();
+	//	mainFrame.add(errorResultFrame);
+	}
+	
+	public void doSearch() {
+		if(this.currentError != null) {
+			mainFrame.remove(this.currentError);
+		}
+		DNA dna = new DNA(enterSequence.getText());
+		int minPrim;
+		int maxPrim;
+		int minTmFun;
+		int maxTmFun;
+		int minGcFun;
+		int maxGcFun;
+		int minBpFun;
+		int maxBpFun;
+		if (minPrimerBp.getText().length() > 0 && maxPrimerBp.getText().length() > 0) {
+			minPrim = Integer.parseInt(minPrimerBp.getText());
+			maxPrim = Integer.parseInt(maxPrimerBp.getText());
+		} else {
+			this.currentError = buildErrorResultsFrame("Check your primer lengths");
+			mainFrame.add(currentError);
+			revalidate();
+			repaint();
+			return;
+		}
 		
+		if (minTm.getText().length() > 0 && maxTm.getText().length() > 0) {
+			minTmFun = Integer.parseInt(minTm.getText());
+			maxTmFun = Integer.parseInt(maxTm.getText());
+		} else {
+			this.currentError = buildErrorResultsFrame("Check your Tm lengths");
+			mainFrame.add(currentError);
+			revalidate();
+			repaint();
+			return;
+		}
+		
+		if (minGc.getText().length() > 0 && maxGc.getText().length() > 0) {
+			minGcFun = Integer.parseInt(minGc.getText());
+			maxGcFun = Integer.parseInt(maxGc.getText());
+		} else {
+			this.currentError = buildErrorResultsFrame("Check your Gc lengths");
+			mainFrame.add(currentError);
+			revalidate();
+			repaint();
+			return;
+		}
+		if (minBp.getText().length() > 0 && maxBp.getText().length() > 0) {
+			minBpFun = Integer.parseInt(minBp.getText());
+			maxBpFun = Integer.parseInt(maxBp.getText());
+		} else {
+			this.currentError = buildErrorResultsFrame("Check your Bp lengths");
+			mainFrame.add(currentError);
+			revalidate();
+			repaint();
+			return;
+		}
+		System.out.println("sSDFSDFSF");
+		primers = dna.findPrimers(minPrim, maxPrim, minGcFun, maxGcFun, minTmFun, maxTmFun );
+		
+	    for (Map<String, String> map : primers) {
+	        System.out.println(map.get("start"));
+	        System.out.println(map.get("end"));
+	        System.out.println(map.get("length"));
+	        System.out.println(map.get("gc_ratio"));
+	        System.out.println(map.get("temp"));
+	        System.out.println(map.get("seq"));
+	    }
 	}
 	
 	public void buildInputFrame() {
@@ -110,7 +183,33 @@ public class PrimerFinder extends JFrame {
 		inputFrame.add(minmaxLabelFrame4);
 		inputFrame.add(primerBpInputFrame);
 		inputFrame.add(findPrimers);
+		findPrimers.addActionListener(new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				{
+					doSearch();
+			
+				}
+			}
+		});
 		
+	}
+	public JPanel buildErrorResultsFrame(String error) {
+		JPanel errorResultFrame = new JPanel();
+		errorResultFrame.setLayout(new GridLayout(6,0));
+		Border blackline = BorderFactory.createLineBorder(Color.black);
+		errorResultFrame.setBorder(blackline);
+		errorResultFrame.add(resultsLabel);
+		
+		JLabel errorMainLabel = new JLabel("There were errors");
+		JLabel errorLabel = new JLabel(error);
+		System.out.println("sdfsdf");
+		errorResultFrame.add(errorMainLabel);
+		errorResultFrame.add(errorLabel);
+		return errorResultFrame;
 	}
 	public void buildResultsFrame() {
 		resultFrame.setLayout(new GridLayout(6,0));
