@@ -10,7 +10,7 @@ import javax.swing.border.Border;
 
 import java.awt.*;
 
-public class Primer extends JFrame {
+public class PrimerFinder extends JFrame {
 	private static final long serialVersionUID = -8723649827349837249L;
 	private JButton findPrimers = new JButton("Search for Primers");
 	private JButton blastPrimers = new JButton("Blast Selected Primer");
@@ -43,7 +43,7 @@ public class Primer extends JFrame {
 	
 	
 	
-	public Primer(String title) {
+	public PrimerFinder(String title) {
 		super(title);
 		setSize(600,1000);
 		setLocationRelativeTo(null);
@@ -55,7 +55,7 @@ public class Primer extends JFrame {
 	}
 	
 	public static void main(String[] args) {
-		new Primer("Primer Finder v0.01");
+		new PrimerFinder("Primer Finder v0.01");
 	}
 	
 	public void buildMainFrame() {
