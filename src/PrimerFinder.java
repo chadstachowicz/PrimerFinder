@@ -3,6 +3,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -36,6 +37,7 @@ public class PrimerFinder extends JFrame {
 	private JPanel mainFrame = new JPanel();
 	private JPanel resultFrame = new JPanel();
 	private JPanel inputFrame = new JPanel();
+	private JPanel sequenceFrame = new JPanel();
 	private JPanel minmaxLabelFrame = new JPanel();
 	private JPanel minmaxLabelFrame2 = new JPanel();
 	private JPanel minmaxLabelFrame3 = new JPanel();
@@ -46,6 +48,19 @@ public class PrimerFinder extends JFrame {
 	private JPanel primerBpInputFrame = new JPanel();
 	private JPanel currentError;
 	private List<Map<String , String>> primers;
+	//max of 5 primers
+	private Object[][] forwardData = {};
+	private Object[][] reverseData = {};
+	
+	private Object[][] makeNewArray(Object[][] original, Object row[]) {
+		Object[][] newArray = new Object[original.length+1][5];
+		for(int i = 0; i < original.length; i++) {
+			newArray[i] = original[i];
+		}
+		newArray[original.length] = row;
+		return newArray;
+		
+	}
 	
 	
 	public PrimerFinder(String title) {
@@ -66,7 +81,15 @@ public class PrimerFinder extends JFrame {
 	}
 	
 	public void buildMainFrame() {
-		mainFrame.setLayout(new GridLayout(2,0));
+		mainFrame.setLayout(new GridLayout(3,0));
+		sequenceFrame.setLayout(new GridLayout(2,0));
+		sequenceFrame.add(enterSequenceLabel);
+
+		JScrollPane scroll = new JScrollPane (enterSequence, 
+				   JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+
+        sequenceFrame.add(scroll);
+        mainFrame.add(sequenceFrame);
 		mainFrame.add(inputFrame);
 		buildInputFrame();
 	//	mainFrame.add(errorResultFrame);
@@ -75,6 +98,17 @@ public class PrimerFinder extends JFrame {
 	public void doSearch() {
 		if(this.currentError != null) {
 			mainFrame.remove(this.currentError);
+			revalidate();
+			repaint();
+			this.currentError = null;
+		}
+		if(this.resultFrame != null) {
+			mainFrame.remove(this.resultFrame);
+			revalidate();
+			repaint();
+			this.resultFrame = new JPanel();
+			this.forwardData = new Object[0][0];
+			this.reverseData = new Object[0][0];
 		}
 		DNA dna = new DNA(enterSequence.getText());
 		int minPrim;
@@ -127,17 +161,31 @@ public class PrimerFinder extends JFrame {
 			repaint();
 			return;
 		}
-		System.out.println("sSDFSDFSF");
-		primers = dna.findPrimers(minPrim, maxPrim, minGcFun, maxGcFun, minTmFun, maxTmFun );
 		
+		if (enterSequence.getText().length() < 50) {
+			this.currentError = buildErrorResultsFrame("You must enter a sequence of at least 50bp");
+			mainFrame.add(currentError);
+			revalidate();
+			repaint();
+			return;
+		}
+		primers = dna.findPrimers(minPrim, maxPrim, minGcFun, maxGcFun, minTmFun, maxTmFun );
+		int i = 0;
 	    for (Map<String, String> map : primers) {
-	        System.out.println(map.get("start"));
-	        System.out.println(map.get("end"));
-	        System.out.println(map.get("length"));
-	        System.out.println(map.get("gc_ratio"));
-	        System.out.println(map.get("temp"));
-	        System.out.println(map.get("seq"));
+	    	if(i<3) {
+	    	//	forwardData[i][0] = map.get("seq");
+	    //		forwardData[i][1] = map.get("length");
+	   // 		forwardData[i][2] = map.get("start");
+	   // 		forwardData[i][3] = map.get("temp");
+	   // 		forwardData[i][4] = map.get("gc_ratio");
+	    		Object[] row = {map.get("seq"),map.get("length"),map.get("start"),map.get("temp"),map.get("gc_ratio")};
+	    		forwardData = makeNewArray(forwardData,row);
+	    		i++;
+	    	} else {
+	    		break;
+	    	}
 	    }
+	    buildResultsFrame();
 	}
 	
 	public void buildInputFrame() {
@@ -167,9 +215,8 @@ public class PrimerFinder extends JFrame {
 		primerBpInputFrame.add(minPrimerBp);
 		primerBpInputFrame.add(maxPrimerBp);
 		
-		inputFrame.add(enterSequenceLabel);
-		enterSequence.setSize(5,4);
-		inputFrame.add(enterSequence);
+
+		
 		inputFrame.add(meltingTempLabel);
 		inputFrame.add(minmaxLabelFrame);
 		inputFrame.add(tmInputFrame);
@@ -206,7 +253,6 @@ public class PrimerFinder extends JFrame {
 		
 		JLabel errorMainLabel = new JLabel("There were errors");
 		JLabel errorLabel = new JLabel(error);
-		System.out.println("sdfsdf");
 		errorResultFrame.add(errorMainLabel);
 		errorResultFrame.add(errorLabel);
 		return errorResultFrame;
@@ -220,50 +266,58 @@ public class PrimerFinder extends JFrame {
 		JLabel forwardPrimerLabel = new JLabel("Forward Primers");
 		String[] columnForwardNames = {"Sequence",
                 "Length",
+                "Start Position",
                 "Tm",
                 "GC Content"};
-		JTable forwardResultTable = new JTable(getForwardTableData(),columnForwardNames);		
+		JScrollPane scrollPane1 = new JScrollPane();
+		JTable forwardResultTable = new JTable(forwardData,columnForwardNames);	
+		scrollPane1.setViewportView(forwardResultTable);
 		JLabel reversePrimerLabel = new JLabel("Reverse Primers");
 		String[] columnReverseNames = {"Sequence",
                 "Length",
+                "Start Position",
                 "Tm",
                 "GC Content"};
+		JScrollPane scrollPane2 = new JScrollPane();
 		JTable reverseResultTable = new JTable(getReverseTableData(),columnReverseNames);
+		scrollPane2.setViewportView(reverseResultTable);
 		resultFrame.add(forwardPrimerLabel);
-		resultFrame.add(forwardResultTable);
+		resultFrame.add(scrollPane1);
 		resultFrame.add(reversePrimerLabel);
-		resultFrame.add(reverseResultTable);
-		resultFrame.add(blastPrimers);
-		
+		resultFrame.add(scrollPane2);
+	//	resultFrame.add(blastPrimers);
+		mainFrame.add(resultFrame);
+		revalidate();
+		repaint();
 		
 	}
 	public Object[][] getForwardTableData() {
 		Object[][] forwardData = {
 			    {"ACGTGTCGAG", "20",
-			     "69.7", "60.2"},
+			     "69.7", "2", "60.2"},
 			    {"ATCGTTGAGGC", "20",
-			     "54.4", "60.2"},
+			     "54.4", "2","60.2"},
 			    {"ATGCTGCTGA", "190",
-			     "45.5", "60.2"},
+			     "45.5", "2","60.2"},
 			    {"GGTATCCA", "12",
-			     "65.4", "60.2"},
+			     "65.4", "2","60.2"},
 			    {"GGTAACCCATTA", "7",
-			     "65.5", "60.2"}
+			     "65.5", "2","60.2"}
 			};
 		return forwardData;
 	}
 	public Object[][] getReverseTableData() {
 		Object[][] reverseData = {
 			    {"ACGTGTCGAG", "20",
-			     "69.7", "60.2"},
+			     "69.7", "2","60.2"},
 			    {"ATCGTTGAGGC", "20",
-			     "54.4", "60.2"},
+			     "54.4", "2","60.2"},
 			    {"ATGCTGCTGA", "190",
-			     "45.5", "60.2"},
+			     "45.5", "2","60.2"},
 			    {"GGTATCCA", "12",
-			     "65.4", "60.2"},
+			     "65.4", "2","60.2"},
 			    {"GGTAACCCATTA", "7",
-			     "65.5", "60.2"}
+			     "65.5", "2", "60.2"}
 			};
 		return reverseData;
 	}
