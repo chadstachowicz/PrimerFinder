@@ -74,7 +74,8 @@ public class DNA {
 						primer.put("length", Integer.toString(primer_min+k));
 						primer.put("seq", seq_check);
 						myMap.add(primer);
-						i = i + primer_max + k;
+						//hop at least 400 to get a smatering of primers
+						i = i + primer_max + k + 400;
 						k = 0;
 					}
 				}
@@ -83,9 +84,78 @@ public class DNA {
 		return myMap;
 	}
 	
+	public List<Map<String , String>> findReversePrimers(List<Map<String , String>> primers, int minBp, int maxBp, int primer_min, int primer_max, int gc_min, int gc_max, int temp_min, int temp_max) {
+	    List<Map<String , String>> myMap  = new ArrayList<Map<String,String>>();
+	    int dif = primer_max-primer_min;
+	    for (Map<String, String> map : primers) {
+	    	System.out.println("sdfdfdsfsfsf");
+	    	boolean primerFound = false;
+	    	int max = this.sequence_length;
+	    	int start = Integer.parseInt(map.get("start"));
+	    	if((start + maxBp) < max) {
+	    		max = Integer.parseInt(map.get("start")) + maxBp;
+	    	}
+	    	for(int i = max; i > start + primer_max; i--) {
+	    		if(primerFound) {
+	    			break;
+	    		} else {
+	    			for(int k = 0; k < dif; k++) {
+	    				if(primerFound) {
+	    	    			break;
+	    	    		}
+	    				String seq_check = this.sequence.substring(i - primer_min - k, i);
+	    				float[] returns = calcGCTemp(seq_check);
+	    				float temp = returns[0];
+	    				float gc_ratio = returns[1];
+	    				if (gc_ratio >= (float)gc_min && gc_ratio <= (float) gc_max) {
+	    					if(temp >= temp_min && temp <= temp_max) {
+	    						Map<String,String> primer = new HashMap<String, String>();
+	    						primer.put("start", Integer.toString(i));
+	    						primer.put("end", Integer.toString(i+primer_min+k));
+	    						primer.put("gc_ratio", Float.toString(gc_ratio));
+	    						primer.put("temp", Float.toString(temp));
+	    						primer.put("length", Integer.toString(primer_min+k));
+	    						String revSeq = reverseCompliment(seq_check);
+	    						primer.put("seq", revSeq);
+	    						myMap.add(primer);
+	    						//hop at least 400 to get a smatering of primers
+	    						//k = 0;
+	    						primerFound = true;
+	    					}
+	    				}
+	    			}
+	    		}
+	    	}
+	    	
+	    }
+	    
+		return myMap;
+	}
+	
 	public float calcTemp(int A, int T, int C, int G) {
 		float temp = (float)(64.9 + 41*(G+C-16.4)/(A+T+G+C));
 		return temp;
+	}
+	
+	public String reverseCompliment(String sequence) {
+		String newSeq = "";
+		System.out.println(sequence.length());
+		for(int i = sequence.length()-1; i >= 0; i--) {
+			if(sequence.charAt(i) == 'A') {
+				newSeq += "T";
+			}
+			if(sequence.charAt(i) == 'T') {
+				newSeq += "A";
+			}
+			if(sequence.charAt(i) == 'C') {
+				newSeq += "G";
+			}
+			if(sequence.charAt(i) == 'G') {
+				newSeq += "C";
+			}
+		}
+		System.out.println(newSeq.length());
+		return newSeq;
 	}
 
 }

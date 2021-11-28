@@ -17,15 +17,14 @@ import java.util.Map;
 
 public class PrimerFinder extends JFrame {
 	private static final long serialVersionUID = -8723649827349837249L;
-	private JButton findPrimers = new JButton("Search for Primers");
-	private JButton blastPrimers = new JButton("Blast Selected Primer");
+	public JButton findPrimers = new JButton("Search for Primers");
 	private JLabel enterSequenceLabel = new JLabel("<html><u><bold><b1>Sequence</u></bold></b1></html>");
 	private JLabel meltingTempLabel = new JLabel("<html><u><bold><b1>Melting Temperature Range (Tm)</u></bold></b1></html>");
 	private JLabel gcLabel = new JLabel("<html><u><bold><b1>GC Content Range (Gc)</u></bold></b1></html>");
 	private JLabel ampliconRangeLabel = new JLabel("<html><u><bold><b1>Amplicon Length Range (bp)</u></bold></b1></html>");
 	private JLabel primerRangeLabel = new JLabel("<html><u><bold><b1>Primer Length Range (bp)</u></bold></b1></html>");
-	private JLabel resultsLabel = new JLabel("Below are the results of your search:");
-	private JTextArea enterSequence = new JTextArea();
+	private JLabel resultsLabel = new JLabel("Below are your search results. First row of forward matches the first row of reverse, etc..");
+	public JTextArea enterSequence = new JTextArea();
 	private JTextField minTm = new JTextField("40");
 	private JTextField maxTm = new JTextField("60");
 	private JTextField minBp = new JTextField("50");
@@ -48,19 +47,12 @@ public class PrimerFinder extends JFrame {
 	private JPanel primerBpInputFrame = new JPanel();
 	private JPanel currentError;
 	private List<Map<String , String>> primers;
+	private List<Map<String , String>> rev_primers;
 	//max of 5 primers
-	private Object[][] forwardData = {};
-	private Object[][] reverseData = {};
-	
-	private Object[][] makeNewArray(Object[][] original, Object row[]) {
-		Object[][] newArray = new Object[original.length+1][5];
-		for(int i = 0; i < original.length; i++) {
-			newArray[i] = original[i];
-		}
-		newArray[original.length] = row;
-		return newArray;
-		
-	}
+	public Object[][] forwardData = {};
+	public Object[][] reverseData = {};
+	private static PrimerFinder UIPass;
+
 	
 	
 	public PrimerFinder(String title) {
@@ -77,7 +69,8 @@ public class PrimerFinder extends JFrame {
 
 	
 	public static void main(String[] args) {
-		new PrimerFinder("Primer Finder v0.01");
+		PrimerFinder pf = new PrimerFinder("Primer Finder v0.01");
+		UIPass = pf;
 	}
 	
 	public void buildMainFrame() {
@@ -92,10 +85,10 @@ public class PrimerFinder extends JFrame {
         mainFrame.add(sequenceFrame);
 		mainFrame.add(inputFrame);
 		buildInputFrame();
-	//	mainFrame.add(errorResultFrame);
 	}
 	
 	public void doSearch() {
+		findPrimers.setEnabled(false);
 		if(this.currentError != null) {
 			mainFrame.remove(this.currentError);
 			revalidate();
@@ -110,7 +103,7 @@ public class PrimerFinder extends JFrame {
 			this.forwardData = new Object[0][0];
 			this.reverseData = new Object[0][0];
 		}
-		DNA dna = new DNA(enterSequence.getText());
+		//DNA dna = new DNA(enterSequence.getText());
 		int minPrim;
 		int maxPrim;
 		int minTmFun;
@@ -125,6 +118,7 @@ public class PrimerFinder extends JFrame {
 		} else {
 			this.currentError = buildErrorResultsFrame("Check your primer lengths");
 			mainFrame.add(currentError);
+			findPrimers.setEnabled(true);
 			revalidate();
 			repaint();
 			return;
@@ -136,6 +130,7 @@ public class PrimerFinder extends JFrame {
 		} else {
 			this.currentError = buildErrorResultsFrame("Check your Tm lengths");
 			mainFrame.add(currentError);
+			findPrimers.setEnabled(true);
 			revalidate();
 			repaint();
 			return;
@@ -147,6 +142,7 @@ public class PrimerFinder extends JFrame {
 		} else {
 			this.currentError = buildErrorResultsFrame("Check your Gc lengths");
 			mainFrame.add(currentError);
+			findPrimers.setEnabled(true);
 			revalidate();
 			repaint();
 			return;
@@ -157,6 +153,7 @@ public class PrimerFinder extends JFrame {
 		} else {
 			this.currentError = buildErrorResultsFrame("Check your Bp lengths");
 			mainFrame.add(currentError);
+			findPrimers.setEnabled(true);
 			revalidate();
 			repaint();
 			return;
@@ -165,27 +162,14 @@ public class PrimerFinder extends JFrame {
 		if (enterSequence.getText().length() < 50) {
 			this.currentError = buildErrorResultsFrame("You must enter a sequence of at least 50bp");
 			mainFrame.add(currentError);
+			findPrimers.setEnabled(true);
 			revalidate();
 			repaint();
 			return;
 		}
-		primers = dna.findPrimers(minPrim, maxPrim, minGcFun, maxGcFun, minTmFun, maxTmFun );
-		int i = 0;
-	    for (Map<String, String> map : primers) {
-	    	if(i<3) {
-	    	//	forwardData[i][0] = map.get("seq");
-	    //		forwardData[i][1] = map.get("length");
-	   // 		forwardData[i][2] = map.get("start");
-	   // 		forwardData[i][3] = map.get("temp");
-	   // 		forwardData[i][4] = map.get("gc_ratio");
-	    		Object[] row = {map.get("seq"),map.get("length"),map.get("start"),map.get("temp"),map.get("gc_ratio")};
-	    		forwardData = makeNewArray(forwardData,row);
-	    		i++;
-	    	} else {
-	    		break;
-	    	}
-	    }
-	    buildResultsFrame();
+		System.out.println("sdfsdfsdf");
+		SearchThread searchThread = new SearchThread(UIPass,minPrim, maxPrim, minGcFun, maxGcFun, minTmFun, maxTmFun, minBpFun, maxBpFun);
+		new Thread(searchThread).start();
 	}
 	
 	public void buildInputFrame() {
@@ -264,7 +248,7 @@ public class PrimerFinder extends JFrame {
 		resultFrame.add(resultsLabel);
 		
 		JLabel forwardPrimerLabel = new JLabel("Forward Primers");
-		String[] columnForwardNames = {"Sequence",
+		String[] columnForwardNames = {"Index","Sequence",
                 "Length",
                 "Start Position",
                 "Tm",
@@ -273,13 +257,13 @@ public class PrimerFinder extends JFrame {
 		JTable forwardResultTable = new JTable(forwardData,columnForwardNames);	
 		scrollPane1.setViewportView(forwardResultTable);
 		JLabel reversePrimerLabel = new JLabel("Reverse Primers");
-		String[] columnReverseNames = {"Sequence",
+		String[] columnReverseNames = {"Index","Sequence",
                 "Length",
                 "Start Position",
                 "Tm",
                 "GC Content"};
 		JScrollPane scrollPane2 = new JScrollPane();
-		JTable reverseResultTable = new JTable(getReverseTableData(),columnReverseNames);
+		JTable reverseResultTable = new JTable(reverseData,columnReverseNames);
 		scrollPane2.setViewportView(reverseResultTable);
 		resultFrame.add(forwardPrimerLabel);
 		resultFrame.add(scrollPane1);
