@@ -275,34 +275,4 @@ public class PrimerFinder extends JFrame {
 		repaint();
 		
 	}
-	public Object[][] getForwardTableData() {
-		Object[][] forwardData = {
-			    {"ACGTGTCGAG", "20",
-			     "69.7", "2", "60.2"},
-			    {"ATCGTTGAGGC", "20",
-			     "54.4", "2","60.2"},
-			    {"ATGCTGCTGA", "190",
-			     "45.5", "2","60.2"},
-			    {"GGTATCCA", "12",
-			     "65.4", "2","60.2"},
-			    {"GGTAACCCATTA", "7",
-			     "65.5", "2","60.2"}
-			};
-		return forwardData;
-	}
-	public Object[][] getReverseTableData() {
-		Object[][] reverseData = {
-			    {"ACGTGTCGAG", "20",
-			     "69.7", "2","60.2"},
-			    {"ATCGTTGAGGC", "20",
-			     "54.4", "2","60.2"},
-			    {"ATGCTGCTGA", "190",
-			     "45.5", "2","60.2"},
-			    {"GGTATCCA", "12",
-			     "65.4", "2","60.2"},
-			    {"GGTAACCCATTA", "7",
-			     "65.5", "2", "60.2"}
-			};
-		return reverseData;
-	}
 }
